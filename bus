@@ -1,0 +1,258 @@
+using System.ComponentModel.Design;
+using System.Diagnostics;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
+
+namespace ConsoleApp2
+{
+   
+    internal class Program
+    {
+        static int freeBusSeats = 10;
+        static int ticketsSold = 0;
+        static decimal moneyTaken = 0;
+
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = System.Text.Encoding.Default;
+            Menu();
+        }
+        static void Menu()
+        {
+            bool isInMenu = true;
+
+            string menuchoice = "";
+
+            while (isInMenu)
+            {
+                Console.WriteLine("Ballin busses Menu");
+                Console.WriteLine();
+                Console.WriteLine("1. Buy Ticket");
+                Console.WriteLine("2. Check in return ticket");
+                Console.WriteLine("3. Print Journey report");
+                Console.WriteLine("4. Exit");
+                Console.WriteLine();
+
+                menuchoice = Console.ReadLine();
+                Console.WriteLine();
+
+                switch (menuchoice)
+                {
+                    case "1":
+                        Buyticket();
+                        Console.WriteLine();
+                        break;
+                    case "2":
+                        CheckInReturn();
+                        break;
+                    case "3":
+                        PrintJReport();
+                        Console.WriteLine();
+                        break;
+                    case "4":
+                        isInMenu = false;
+                        Console.WriteLine("Thank you for using ballin busses!");
+                        break;
+                    default: Console.WriteLine("invalid input"); Console.WriteLine(); break;
+                }//end switch
+            }//end while
+        }//end menu
+        static void Buyticket()
+        {
+            bool isloop = true, isFull = false, isCancel = false;
+            string tickettype = "", customerType = "";
+            decimal price = 0;
+
+            while (isloop)
+            {
+                //input for ticket type
+                Console.WriteLine("Please Enter ticket type (single/return, -1 to cancel)");
+                tickettype = Console.ReadLine();
+
+                //validate user input for ticket type
+                if (tickettype.ToLower() != "single" && tickettype.ToLower() != "return")
+                {
+                    //allow user to cancel purchase
+                    if (tickettype == "-1")
+                    {
+                        isCancel = true;
+                        isloop = false;
+                        continue;
+                    }
+                    Console.WriteLine("Invalid Ticket Type");
+                    Console.WriteLine();
+                    continue;
+
+
+                }
+                price = CalculateTicketPrice(10, tickettype);
+                if (price == -1m)
+                {
+                    Console.WriteLine();
+                    continue;
+                }
+                Console.WriteLine();
+
+                //collect customer type
+                Console.WriteLine("please enter customer type (adult/child/student/OAP, -1 to cancel");
+                customerType = Console.ReadLine();
+
+                if (customerType.ToLower() != "adult" && customerType.ToLower() != "child" && customerType.ToLower() != "student" && customerType.ToLower() != "OAP")
+                {
+                    if (customerType == "-1")
+                    {
+                        isCancel = true;
+                        isloop = false;
+                        continue;
+                    }
+                    Console.WriteLine("Invalid Customer Type");
+                    Console.WriteLine();
+                    continue;
+                }
+
+                price = ApplyDiscount(price, customerType);
+                if (price == -1m)
+                {
+                    Console.WriteLine();
+                    continue;
+                }
+                else
+                {
+                    isloop = false;
+                }
+                Console.WriteLine();
+            }
+
+            if (isCancel)
+            {
+                if (freeBusSeats < 1)
+                {
+                    isFull = true;
+                }
+                else
+                {
+                    moneyTaken += price;
+                    ticketsSold++;
+                    freeBusSeats--;
+                }
+
+                //output
+                if (isFull)
+                {
+                    Console.WriteLine("Bus full");
+                    Console.WriteLine();
+
+                }
+                else
+                {
+                    Console.WriteLine($"Ballin-Sligo {customerType} {tickettype} : {price:C2}");
+                    Console.WriteLine("Thank you for your purchase!");
+                    Console.WriteLine();
+
+                }
+            }
+
+        }
+
+
+        static void CheckInReturn()
+        {
+            if (freeBusSeats < 1)
+            {
+                Console.WriteLine("Bus full");
+                Console.WriteLine();
+            }
+            else
+            {
+                freeBusSeats--;
+                Console.WriteLine("Return Checked in");
+                Console.WriteLine($"Remaining seats on the bus: {freeBusSeats}");
+                Console.WriteLine();
+
+            }
+        }
+
+        static void PrintJReport()
+        {
+            Console.WriteLine("Ballin Bus Company Report");
+            Console.WriteLine("---------------------------");
+            Console.WriteLine($"{"Tickets Sold: "}   {ticketsSold}");
+            Console.WriteLine($"{"Seats Occupied: "} {10 - freeBusSeats}");
+            Console.WriteLine($"{"Money Taken: "}   {moneyTaken:C2}");
+            Console.WriteLine("---------------------------");
+            Console.WriteLine();
+        }
+        static decimal CalculateTicketPrice(decimal basePrice, string tickettype)
+        {
+            decimal ticketprice = -1;
+
+            try
+            {
+                if (basePrice < 0)
+                {
+                    throw new ArgumentException("base price cannot be less than 0!");
+                }
+
+                switch (tickettype.ToLower())
+                {
+                    case "single":
+                        ticketprice = basePrice;
+                        break;
+                    case "return":
+                        ticketprice = basePrice * 1.5m;
+                        break;
+                    default:
+                        ticketprice = basePrice;
+                        break;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return ticketprice;
+        }
+        static decimal ApplyDiscount(decimal price, string customerType)
+        {
+            decimal discountedPrice = -1;
+
+            //Throw an exception if invalid price was input
+            try
+            {
+                //Validate price
+                if (price < 0)
+                {
+                    throw new ArgumentException("Base price cannot be less then 0!");
+                }
+
+                //Adult is default
+                switch (customerType.ToLower())
+                {
+                    case "child":
+                        discountedPrice = price * 0.5m;
+                        break;
+                    case "student":
+                        discountedPrice = price * 0.7m;
+                        break;
+                    case "oap":
+                        discountedPrice = 0m;
+                        break;
+                    default:
+                        discountedPrice = price;
+                        break;
+                }//end switch
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }//end try-catch
+
+            return discountedPrice;
+        }
+
+    }
+
+}
